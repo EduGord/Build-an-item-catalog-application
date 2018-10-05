@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1> {{ topic.name }}</h1>
+    <form action= "{{url_for('editTopic', subject_id = subject.id, topic_id=topic.id)}}" method = 'POST'>
+      <p>New Name:</p>
+      <input type = 'text' size='30' name = 'name' placeholder = '{{topic.name}}'>
+
+      <p>Description:</p>
+      <textarea cols = 31 type = 'text' name = 'description' placeholder = '{{topic.description}}'></textarea>
+      <p/>
+      <input type='submit' value='Edit'>
+    </form>
+    <a href= '{{url_for('subjectTopics', subject_id = topic.subject_id)}}'>Cancel</a>
+  </body>
+</html>

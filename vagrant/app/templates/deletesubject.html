@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1> {{subject.name}} </h1>
+
+    <p> Are you sure you want to delete <strong>{{ subject.name }}</strong>? </p>
+
+    <form action="{{ url_for('deleteSubject', subject_id=subject.id)}}" method = 'POST'>
+      <input type='submit', value = 'Delete'>
+    </form>
+
+    <a href = "{{ url_for('subjectsList', subject_id = subject.id)}}"> Cancel </a>
+
+  </body>
+</html>
