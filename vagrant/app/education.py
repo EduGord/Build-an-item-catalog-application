@@ -20,7 +20,7 @@ app = Flask(__name__)
 @app.route('/education/')
 def subjectsList():
     subjects = session.query(Subject)
-    return(render_template('allsubjects.html', subjects=subjects))
+    return(render_template('subjectslist.html', subjects=subjects))
 
 
 @app.route('/education/subject/new', methods=['GET', 'POST'])
