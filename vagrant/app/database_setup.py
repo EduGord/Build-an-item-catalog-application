@@ -21,6 +21,16 @@ from sqlalchemy import create_engine
 # we use declarative_base() in order to create a base class that our class code will inherit.
 Base = declarative_base()
 
+class User(Base):
+    # Table information
+    __tablename__ = 'user'
+
+    # Mappers
+    name = Column(String(250), nullable = False)
+    email = Column(String(250), nullable = False)
+    picture = Column(String(250))
+    id = Column(Integer, primary_key = True)
+
 # Class definition
 class Subject(Base):
 
@@ -30,6 +40,8 @@ class Subject(Base):
     #  Mappers
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
 # Class definition
 class Topic(Base):
@@ -43,6 +55,8 @@ class Topic(Base):
     description = Column(String(250))
     subject_id = Column(Integer, ForeignKey('subject.id'))
     subject = relationship(Subject)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -65,6 +79,9 @@ class Question(Base):
     body = Column(String(2500))
     topic_id = Column(Integer, ForeignKey('topic.id'))
     topic = relationship(Topic)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
+
 # An instance of our create_engine class and point to the database we'll use
 # Since we're using SQLite 3 the create Engine will create a new file  that we
 # can use similarly to a more robusts database like MySQL or Postgree
