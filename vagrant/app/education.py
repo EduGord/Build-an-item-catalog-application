@@ -31,7 +31,7 @@ app = Flask(__name__)
 def users():
     users = session.query(User)
     # return "The current session state is %s" % login_session['state']
-    return render_template('users.html', users=users)
+    return(render_template('users.html', users=users))
 
 # Create anti-forgery state token
 @app.route('/login')
@@ -41,7 +41,111 @@ def login():
                     for x in xrange(32))
     login_session['state'] = state
     # return "The current session state is %s" % login_session['state']
-    return render_template('login.html', STATE=state)
+    return(render_template('login.html', STATE=state))
+
+
+@app.route('/fbconnect', methods=['POST'])
+def fbconnect():
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid state parameter.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return(response)
+    access_token = request.data
+    print("access token received {token} ".format(token=access_token))
+
+
+    app_id = json.loads(open('fb_client_secrets.json', 'r').read())\
+    ['web']['app_id']
+    app_secret = json.loads(
+        open('fb_client_secrets.json', 'r').read())['web']['app_secret']
+    url = "https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id={client_id}&client_secret={client_secret}&fb_exchange_token={fb_exchange_token}"\
+    .format(client_id = app_id, client_secret = app_secret, fb_exchange_token = access_token)
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+
+
+    # Use token to get user info from API
+    userinfo_url = "https://graph.facebook.com/v3.1/me"
+    '''
+        Due to the formatting for the result from the server token exchange we have to
+        split the token first on commas and select the first index which gives us the key : value
+        for the server access token then we split it on colons to pull out the actual token value
+        and replace the remaining quotes with nothing so that it can be used directly in the graph
+        api calls
+    '''
+    token = result.split(',')[0].split(':')[1].replace('"', '')
+
+    url = "https://graph.facebook.com/v3.1/me?access_token={token}&fields=name,id,email".format(token=token)
+
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+    # print "url sent for API access:%s"% url
+    # print "API JSON result: %s" % result
+
+    data = json.loads(result)
+    print('data: {}'.format(data))
+    login_session['provider'] = 'facebook'
+    login_session['username'] = data['name']
+    login_session['email'] = data['email']
+    login_session['facebook_id'] = data['id']
+
+    # The token must be stored in the login_session in order to properly logout
+    login_session['access_token'] = token
+
+    # Get user picture
+    url = 'https://graph.facebook.com/v2.8/me/picture?access_token={token}&redirect=0&height=200&width=200'.format(token=token)
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+    data = json.loads(result)
+
+    login_session['picture'] = data["data"]["url"]
+
+    # User Helper Functions
+
+    def getUserID(email):
+        try:
+            user = session.query(User).filter_by(email=email).one()
+            return user.id
+        except:
+            return None
+
+    def createUser(login_session):
+        newUser = User(name=login_session['username'], email=login_session[
+                       'email'], picture=login_session['picture'])
+        session.add(newUser)
+        session.commit()
+        user = session.query(User).filter_by(email=login_session['email']).one()
+        return user.id
+
+    # see if user exists
+    user_id = getUserID(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
+    output = ''
+    output += '<h1>Welcome, '
+    output += login_session['username']
+
+    output += '!</h1>'
+    output += '<img src="'
+    output += login_session['picture']
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+
+    flash("Now logged in as {username}".format(username=login_session['username']))
+
+    return(output)
+
+
+@app.route('/fbdisconnect')
+def fbdisconnect():
+    facebook_id = login_session['facebook_id']
+    # The access token must me included to successfully logout
+    access_token = login_session['access_token']
+    url = 'https://graph.facebook.com/{fb_id}/permissions?access_token={access_token}'.format(fb_id=facebook_id,access_token=access_token)
+    h = httplib2.Http()
+    result = h.request(url, 'DELETE')[1]
+    return("you have been logged out")
 
 
 @app.route('/gconnect', methods=['POST'])
@@ -50,7 +154,7 @@ def gconnect():
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
     # Obtain authorization code
     code = request.data
 
@@ -63,19 +167,18 @@ def gconnect():
         response = make_response(
             json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={token}'.format(token=access_token))
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
 
     # Verify that the access token is used for the intended user.
     gplus_id = credentials.id_token['sub']
@@ -83,15 +186,15 @@ def gconnect():
         response = make_response(
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
 
     # Verify that the access token is valid for this app.
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print "Token's client ID does not match app's."
+        print("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
 
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
@@ -99,7 +202,7 @@ def gconnect():
         response = make_response(json.dumps('Current user is already connected.'),
                                  200)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return(response)
 
     # Store the access token in the session for later use.
     login_session['access_token'] = credentials.access_token
@@ -112,11 +215,10 @@ def gconnect():
 
     data = answer.json()
 
+    login_session['provider'] = 'google'
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
-
-    flash("you are now logged in as %s" % login_session['username'])
 
     def createUser(login_session):
         newUser = User(name=login_session['username'], email=login_session[
@@ -135,7 +237,7 @@ def gconnect():
     def getUserID(email):
         try:
             user = session.query(User).filter_by(email=email).one()
-            return user.id
+            return(user.id)
         except:
             return(None)
 
@@ -153,41 +255,53 @@ def gconnect():
     output += '<img src="'
     output += login_session['picture']
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
-    return output
+    flash("you are now logged in as {username}".format(username=login_session['username']))
+    print("done!")
+    return(output)
 
 @app.route('/gdisconnect')
 @app.route('/gdisconnect/')
 def gdisconnect():
+    # Only disconnect a connected user.
     access_token = login_session.get('access_token')
     if access_token is None:
-        print 'Access Token is None'
-        response = make_response(json.dumps('Current user not connected.'), 401)
+        response = make_response(
+            json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
-        return(response)
-    print 'In gdisconnect access token is %s', access_token
-    print 'User name is: '
-    print login_session['username']
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+        return response
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%{token}'.format(token=access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result is '
-    print result
     if result['status'] == '200':
-        # Rest User's sesssion
-        del login_session['access_token']
-        del login_session['gplus_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
-        return(response)
+        return response
     else:
         response = make_response(json.dumps('Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
-        return(response)
+        return response
+
+# Disconnect based on provider
+@app.route('/disconnect')
+def disconnect():
+    if 'provider' in login_session:
+        if login_session['provider'] == 'google':
+            gdisconnect()
+            del login_session['gplus_id']
+            del login_session['access_token']
+        if login_session['provider'] == 'facebook':
+            fbdisconnect()
+            del login_session['facebook_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        del login_session['user_id']
+        del login_session['provider']
+        flash("You have successfully been logged out.")
+        return(redirect(url_for('subjects')))
+    else:
+        flash("You were not logged in")
+        return(redirect(url_for('subjects')))
 
 
 @app.route('/')
@@ -246,7 +360,8 @@ def deleteSubject(subject_id):
 def topics(subject_id):
     topics = session.query(Topic).filter_by(subject_id=subject_id)
     subject = session.query(Subject).filter_by(id=subject_id).one()
-    return(render_template('topics.html', topics=topics, subject=subject))
+    subjects = session.query(Subject)
+    return(render_template('topics.html', topics=topics, subject=subject,login_session=login_session,subjects=subjects))
 
 
 @app.route('/education/<int:subject_id>/JSON')
@@ -274,9 +389,9 @@ def newTopic(subject_id):
         session.add(newTopic)
         session.commit()
         flash("New topic created!")
-        return redirect(url_for('topics', subject_id=subject_id))
+        return(redirect(url_for('topics', subject_id=subject_id)))
     else:
-        return render_template('newtopic.html', subject=subject)
+        return(render_template('newtopic.html', subject=subject))
 
 
 @app.route('/education/<int:subject_id>/topic/<int:topic_id>/edit',

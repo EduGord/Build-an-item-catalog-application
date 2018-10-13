@@ -20,14 +20,6 @@ main {
   background: #f6f6f6;
 }
 
-section article:first-of-type {
-  padding-top: 5%;
-}
-
-main button:last-child {
-	margin-bottom: 5%;
-}
-
 nav {
   box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
 }

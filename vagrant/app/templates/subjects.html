@@ -26,7 +26,7 @@
       <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
           <li class="nav-item active">
-            <a class="nav-link" href="#">E-Learning<span class="sr-only">(current)</span></a>
+            <a class="nav-link" href="education">E-Learning<span class="sr-only">(current)</span></a>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -42,7 +42,7 @@
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
             {% if login_session['username'] %}
-            <a class="nav-link" href="{{url_for('gdisconnect')}}">Log Out</a>
+            <a class="nav-link" href="{{url_for('disconnect')}}">Log Out</a>
             {% else %}
             <a class="nav-link" href="{{url_for('login')}}">Log In</a>
             {% endif %}
@@ -61,14 +61,15 @@
       {% endif %}
     {% endwith %}
 
-    <main class="col-6 mx-auto mt-1">
-
+    <main class="col-6 mx-auto mt-1 pt-5 pb-5">
+      <h1>Subjects</h1>
+      <hr>
       <section class="subjects">
       {% for subject in subjects %}
         <article class="mx-auto text-center">
-          <h2> {{subject.name}} </h2>
+          <h2> {{subject.name}} </login_session></h2>
           <button type="button" class="btn btn-info btn-sm mr-2" onclick="location.href='{{url_for('topics',subject_id=subject.id)}}'"> Topics </button>
-          {% if login_session['user_id']  == subject.user_id %}
+          {% if login_session['email'] and login_session['user_id']  == subject.user_id %}
           <button type="button" class="btn btn-primary btn-sm mr-2" onclick="location.href='{{url_for('editSubject', subject_id=subject.id)}}'">Edit</button>
           <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('deleteSubject', subject_id=subject.id)}}'">Delete</button>
           <hr>
@@ -76,7 +77,9 @@
         </article>
       {% endfor %}
       </section>
+      {% if login_session['username'] %}
       <button type="button" class="btn btn-success mt-4" onclick="location.href='{{url_for('newSubject')}}'"> New Subject </button>
+      {% endif %}
     </main>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
