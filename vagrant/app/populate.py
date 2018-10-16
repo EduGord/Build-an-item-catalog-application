@@ -24,13 +24,13 @@ session.add(subject1)
 session.commit()
 
 topic1 = Topic(user_id=1, name="Question Words", description="A list of verbs that are \
-irregular in the Past Tense", subject=subject1)
+irregular in the Past Tense", subject=subject1, article='')
 
 session.add(topic1)
 session.commit()
 
 topic2 = Topic(user_id=1, name="Past Tense Irregular Verbs", description="Who, When, Why,\
- What, Which, How", subject=subject1)
+ What, Which, How", subject=subject1, article='')
 
 session.add(topic2)
 session.commit()
@@ -43,13 +43,13 @@ session.add(subject2)
 session.commit()
 
 topic3 = Topic(user_id=1, name="First degree equations with one variable", description=\
-"((x + 2)*3 + 1)/6 = 10", subject = subject2)
+"((x + 2)*3 + 1)/6 = 10", subject = subject2, article='')
 
 session.add(topic3)
 session.commit()
 
 topic4 = Topic(user_id=1, name="First degree inequations", description="x + 6 > 5 + 2x",\
- subject = subject2)
+ subject = subject2, article='')
 
 session.add(topic4)
 session.commit()
@@ -61,13 +61,13 @@ subject3 = Subject(user_id=1, name="Chemestry")
 session.add(subject3)
 session.commit()
 
-topic5 = Topic(user_id=1, name="Atom basics", description="", subject = subject3)
+topic5 = Topic(user_id=1, name="Atom basics", description="", subject = subject3, article='')
 
 session.add(topic5)
 session.commit()
 
 topic6 = Topic(user_id=1, name="Atomic Mass & Atomic Mass Number", description="", \
-subject = subject3)
+subject = subject3, article='')
 
 session.add(topic6)
 session.commit()
@@ -80,13 +80,13 @@ session.add(subject4)
 session.commit()
 
 topic7 = Topic(user_id=1, name="Kinematics of uniform motion", description="S = S0 + V*t",\
- subject = subject4)
+ subject = subject4, article='')
 
 session.add(topic7)
 session.commit()
 
 topic8 = Topic(user_id=1, name="Kinematics of uniform accelerated motion", \
-description="S = S0 + V*t + (a*t^2)/2", subject = subject4)
+description="S = S0 + V*t + (a*t^2)/2", subject = subject4, article='')
 
 session.add(topic8)
 session.commit()

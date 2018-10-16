@@ -70,6 +70,8 @@
         <article>
           <p>Topic:<strong> {{topic.name}} </strong></p>
           <p> Description: {{topic.description}} </p>
+          <p> Article: {{topic.article}} </p>
+          <button type="button" class="btn btn-info btn-sm mr-2" onclick="location.href='{{url_for('viewTopic',subject_id=subject.id,topic_id=topic.id)}}'"> View </button>
           {% if login_session['email'] and login_session['user_id']  == subject.user_id %}
           <button type="button" class="btn btn-primary btn-sm mr-2" onclick="location.href='{{url_for('editTopic', subject_id = subject.id, topic_id = topic.id)}}'">Edit</button>
           <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('deleteTopic', subject_id = subject.id, topic_id = topic.id)}}'">Delete</button>

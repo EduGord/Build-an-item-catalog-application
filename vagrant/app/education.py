@@ -15,6 +15,11 @@ import httplib2
 import json
 from flask import make_response
 import requests
+# Markdown
+import markdown
+from flask import Markup
+# Find files
+import os
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
@@ -335,7 +340,7 @@ def editSubject(subject_id):
         flash("Subject edited")
         return(redirect(url_for('subjects')))
     else:
-        return(render_template('editsubject.html',subject=editSubject))
+        return(render_template('editsubject.html',subject=editSubject,login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/delete',
@@ -377,6 +382,17 @@ def topic(subject_id):
     subject = session.query(Subject).filter_by(id=subject_id).one()
     return(render_template('topic.html', subject=subject))
 
+@app.route('/education/<int:subject_id>/<int:topic_id>/view', methods=['GET'])
+@app.route('/education/<int:subject_id>/<int:topic_id>/view/', methods=['GET'])
+def viewTopic(subject_id,topic_id):
+    topic = session.query(Topic).filter_by(id=topic_id)
+    article = topic.one().article
+    with open('./static/articles/{article}'.format(article=article), 'r') as file:
+        content = file.read()
+        content = Markup(markdown.markdown(content))
+    subject = session.query(Subject).filter_by(id=subject_id).one()
+    return(render_template('topic.html', subject=subject,login_session=login_session, content=content))
+
 
 @app.route('/education/<int:subject_id>/topic/new', methods=['POST', 'GET'])
 @app.route('/education/<int:subject_id>/topic/new/', methods=['POST', 'GET'])
@@ -399,20 +415,22 @@ def newTopic(subject_id):
 @app.route('/education/<int:subject_id>/topic/<int:topic_id>/edit/',
           methods=['POST', 'GET'])
 def editTopic(subject_id, topic_id):
+    files = os.listdir('./static/articles')
     editTopic = session.query(Topic).filter_by(subject_id=subject_id,
                                               id=topic_id).one()
     if request.method == 'POST':
         if request.form['name']:
             editTopic.name = request.form['name']
             editTopic.description = request.form['description']
+            editTopic.article = request.form['article']
             session.add(editTopic)
             session.commit()
             flash("Subject topic edited!")
-        return(redirect(url_for('topics', subject_id=subject_id)))
+        return(redirect(url_for('topics', subject_id=subject_id,login_session=login_session)))
     else:
         subject = session.query(Subject).filter_by(id=subject_id).one()
         return(render_template('edittopic.html', subject=subject,
-                               topic=editTopic))
+                               topic=editTopic,login_session=login_session,files=files))
 
 
 @app.route('/education/<int:subject_id>/topic/<int:topic_id>/delete',

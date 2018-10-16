@@ -57,6 +57,7 @@ class Topic(Base):
     subject = relationship(Subject)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
+    article = Column(String(80))
 
     @property
     def serialize(self):
