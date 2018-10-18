@@ -1,8 +1,5 @@
-
-vagrant/app/client_secrets.json
 vagrant/app/database_setup.pyc
 vagrant/app/educationmenu.db
-vagrant/app/fb_client_secrets.json
 vagrant/.vagrant/machines/default/virtualbox/action_provision
 vagrant/.vagrant/machines/default/virtualbox/action_set_name
 vagrant/.vagrant/machines/default/virtualbox/creator_uid
