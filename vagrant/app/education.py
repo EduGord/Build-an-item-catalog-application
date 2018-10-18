@@ -115,8 +115,10 @@ def fbconnect():
             return None
 
     def createUser(login_session):
-        newUser = User(name=login_session['username'], email=login_session[
-                       'email'], picture=login_session['picture'])
+        newUser = User(name=login_session['username'], \
+                       email=login_session['email'], \
+                       picture=login_session['picture'], \
+                       id=login_session['facebook_id'])
         session.add(newUser)
         session.commit()
         user = session.query(User).filter_by(email=login_session['email']).one()
@@ -226,11 +228,13 @@ def gconnect():
     login_session['email'] = data['email']
 
     def createUser(login_session):
-        newUser = User(name=login_session['username'], email=login_session[
-                       'email'], picture=login_session['picture'])
+        newUser = User(name=login_session['username'], \
+                       email=login_session['email'], \
+                       picture=login_session['picture'], \
+                       id=login_session['gplus_id'])
         session.add(newUser)
         session.commit()
-        user = session.query(User).filter_by(email=login_session['email']).one()
+        user = session.query(User).filter_by(id=login_session['gplus_id']).one()
         return(user.id)
 
 
@@ -319,14 +323,18 @@ def subjects():
 @app.route('/education/subject/new', methods=['GET', 'POST'])
 @app.route('/education/subject/new/', methods=['GET', 'POST'])
 def newSubject():
+
     if request.method == 'POST':
-        newSubject = Subject(name=request.form['name'])
+        if login_session['provider'] == 'facebook':
+            newSubject = Subject(name=request.form['name'], user_id=login_session['facebook_id'])
+        if login_session['provider'] == 'google':
+            newSubject = Subject(name=request.form['name'], user_id=login_session['gplus_id'])
         session.add(newSubject)
         session.commit()
         flash("New subject created!")
         return(redirect(url_for('subjects')))
     else:
-        return(render_template('newsubject.html'))
+        return(render_template('newsubject.html',login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/edit', methods=['GET', 'POST'])
@@ -348,71 +356,101 @@ def editSubject(subject_id):
 @app.route('/education/subject/<int:subject_id>/delete/',
            methods=['GET', 'POST'])
 def deleteSubject(subject_id):
-    deleteSubject = session.query(Subject)\
-	                .filter_by(id=subject_id).one()
     if request.method == 'POST':
+        deleteSubject = session.query(Subject).filter_by(id=subject_id).one()
+        deleteTopics = session.query(Topic).filter_by(subject_id=subject_id)
         session.delete(deleteSubject)
+        for topic in deleteTopics:
+            session.delete(topic)
         session.commit()
         flash("Subject deleted!")
         return(redirect(url_for('subjects')))
     else:
         subject = session.query(Subject).filter_by(id=subject_id).one()
-        return(render_template('deletesubject.html', subject=subject))
+        return(render_template('deletesubject.html', subject=subject, login_session=login_session))
 
 
-@app.route('/education/<int:subject_id>', methods=['GET', 'POST'])
-@app.route('/education/<int:subject_id>/', methods=['GET', 'POST'])
+@app.route('/education/subject/<int:subject_id>', methods=['GET'])
+@app.route('/education/subject/<int:subject_id>/', methods=['GET'])
 def topics(subject_id):
     topics = session.query(Topic).filter_by(subject_id=subject_id)
     subject = session.query(Subject).filter_by(id=subject_id).one()
     subjects = session.query(Subject)
-    return(render_template('topics.html', topics=topics, subject=subject,login_session=login_session,subjects=subjects))
+    return(render_template('topics.html', topics=topics, subject=subject, login_session=login_session, subjects=subjects))
 
 
-@app.route('/education/<int:subject_id>/JSON')
+@app.route('/education/subject/<int:subject_id>/JSON')
 def subjectJSON(subject_id):
     subject = session.query(Subject).filter_by(id=subject_id).one()
     topics = session.query(Topic).filter_by(subject_id=subject.id)
     return(jsonify(topics=[topics.serialize for topic in topics]))
 
 
-@app.route('/education/<int:subject_id>/<int:topic>', methods=['GET', 'POST'])
-@app.route('/education/<int:subject_id>/<int:topic>/', methods=['GET', 'POST'])
-def topic(subject_id):
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/view', methods=['GET'])
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/view/', methods=['GET'])
+def viewTopic(subject_id, topic_id):
+    topics = session.query(Topic).filter_by(subject_id=subject_id)
+    topic = topics.filter_by(id=topic_id).one()
+    subjects = session.query(Subject)
     subject = session.query(Subject).filter_by(id=subject_id).one()
-    return(render_template('topic.html', subject=subject))
-
-@app.route('/education/<int:subject_id>/<int:topic_id>/view', methods=['GET'])
-@app.route('/education/<int:subject_id>/<int:topic_id>/view/', methods=['GET'])
-def viewTopic(subject_id,topic_id):
-    topic = session.query(Topic).filter_by(id=topic_id)
-    article = topic.one().article
-    with open('./static/articles/{article}'.format(article=article), 'r') as file:
+    if topic.article:
+        dir = 'articles'
+        article = topic.article
+    else:
+        dir = 'common_files'
+        article = 'Not Available.md'
+    with open('./static/{dir}/{article}'.format(dir=dir, article=article), 'r') as file:
         content = file.read()
         content = Markup(markdown.markdown(content))
+    return(render_template('topic.html', subjects=subjects, topics=topics,\
+                           subject=subject, topic=topic, \
+                           login_session=login_session, content=content))
+
+@app.route('/education/subject/<int:subject_id>/<int:topic_id>/quiz', methods=['POST','GET'])
+@app.route('/education/subject/<int:subject_id>/<int:topic_id>/quiz/', methods=['POST','GET'])
+def quiz(subject_id, topic_id):
     subject = session.query(Subject).filter_by(id=subject_id).one()
-    return(render_template('topic.html', subject=subject,login_session=login_session, content=content))
+    topic = session.query(Topic).filter_by(id=topic_id).one()
+    questions = session.query(Question).filter_by(subject_id=subject_id,topic_id=topic_id)
+    if not questions.first():
+        with open('./static/common_files/Not Available.md', 'r') as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+            subjects = session.query(Subject)
+            topics = session.query(Topic).filter_by(subject_id=subject_id)
+        return(render_template('notavailable.html', subjects=subjects, \
+                               topics=topics,\
+                               subject=subject, topic=topic, \
+                               login_session=login_session, content=content))
+    else:
+        return(render_template('quiz.html', subject = subject, topic = topic, login_session=login_session))
 
-
-@app.route('/education/<int:subject_id>/topic/new', methods=['POST', 'GET'])
-@app.route('/education/<int:subject_id>/topic/new/', methods=['POST', 'GET'])
+@app.route('/education/subject/<int:subject_id>/topic/new', methods=['POST', 'GET'])
+@app.route('/education/subject/<int:subject_id>/topic/new/', methods=['POST', 'GET'])
 def newTopic(subject_id):
+    files = os.listdir('./static/articles')
+
     subject = session.query(Subject).filter_by(id=subject_id).one()
     if request.method == 'POST':
-        newTopic = Topic(
-            name=request.form['name'], description=request.form['description'],\
-			subject_id=subject_id)
+        if login_session['provider'] == 'facebook':
+            id = login_session['facebook_id']
+        if login_session['provider'] == 'google':
+            id = login_session['gplus_id']
+        newTopic = Topic(name=request.form['name'], \
+                         description=request.form['description'], \
+                         subject_id=subject_id, user_id=id, \
+                         article=request.form['article'])
         session.add(newTopic)
         session.commit()
         flash("New topic created!")
         return(redirect(url_for('topics', subject_id=subject_id)))
     else:
-        return(render_template('newtopic.html', subject=subject))
+        return(render_template('newtopic.html', subject=subject, files=files, login_session=login_session))
 
 
-@app.route('/education/<int:subject_id>/topic/<int:topic_id>/edit',
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/edit',
            methods=['POST', 'GET'])
-@app.route('/education/<int:subject_id>/topic/<int:topic_id>/edit/',
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/edit/',
           methods=['POST', 'GET'])
 def editTopic(subject_id, topic_id):
     files = os.listdir('./static/articles')
@@ -426,20 +464,21 @@ def editTopic(subject_id, topic_id):
             session.add(editTopic)
             session.commit()
             flash("Subject topic edited!")
-        return(redirect(url_for('topics', subject_id=subject_id,login_session=login_session)))
+        return(redirect(url_for('topics', subject_id=subject_id)))
     else:
         subject = session.query(Subject).filter_by(id=subject_id).one()
         return(render_template('edittopic.html', subject=subject,
-                               topic=editTopic,login_session=login_session,files=files))
+                               topic=editTopic, login_session=login_session, \
+                               files=files))
 
 
-@app.route('/education/<int:subject_id>/topic/<int:topic_id>/delete',
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/delete',
            methods=['POST', 'GET'])
-@app.route('/education/<int:subject_id>/topic/<int:topic_id>/delete/',
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/delete/',
           methods=['POST', 'GET'])
 def deleteTopic(subject_id, topic_id):
     deleteTopic = session.query(Topic).filter_by(subject_id=subject_id,
-                                                   id=topic_id).one()
+                                                 id=topic_id).one()
     if request.method == 'POST':
         session.delete(deleteTopic)
         session.commit()
@@ -448,7 +487,8 @@ def deleteTopic(subject_id, topic_id):
     else:
         subject = session.query(Subject).filter_by(id=subject_id).one()
         return(render_template('deletetopic.html', subject=subject,
-                               topic=deleteTopic))
+                               topic=deleteTopic,login_session=login_session))
+
 
 if __name__ == '__main__':
     app.secret_key = 'supersecretkey'

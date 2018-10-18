@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -8,9 +8,9 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
     <link rel=stylesheet href="{{url_for('static', filename='styles.css')}}">
   </head>
-  <body class="container-fluid px-0 text-center">
+  <body class="container-fluid px-0">
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary text-center">
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -21,7 +21,7 @@
           <figcaption>{{login_session['username']}}</figcaption>
         </figure>
       </div>
-      {%endif %}
+      {% endif %}
 
       <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
@@ -30,11 +30,25 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Subjects
+              {{subject.name}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              {% for subject in subjects %}
-                <a class="dropdown-item" href="{{url_for('topics',subject_id=subject.id)}}">{{subject.name}}</a>
+              {% for sub in subjects %}
+                {% if sub.name != subject.name %}
+                <a class="dropdown-item" href="{{url_for('topics',subject_id=sub.id)}}">{{sub.name}}</a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{topic.name}}
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for top in topics %}
+              {% if top.name != topic.name %}
+                <a class="dropdown-item" href="{{url_for('viewTopic', topic_id=top.id, subject_id=subject.id)}}">{{top.name}}</a>
+              {% endif %}
               {% endfor %}
             </div>
           </li>
@@ -50,43 +64,15 @@
         </ul>
       </div>
     </nav>
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for message in messages %}
-          <li><strong>{{message}}</strong></li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
-    <main class="col-6 mx-auto mt-1 pt-5 pb-5">
-      <h1> {{subject.name}} </h1>
-
-      <h2> New Topic </h2>
-
-      <form method = 'POST'>
-        <p>Name:</p>
-        <input type='text' size='30' name='name'>
-        <br>
-        <p>Description:</p>
-        <textarea type='text'  cols='31' name='description'></textarea>
-        <br>
-        <p>Article:</p>
-        <select name = 'article'>
-          <option value="" selected></option>
-          {% for article in files %}
-          <option value="{{article}}">{{article}}</option>
-          {% endfor %}
-        </select>
-        <br>
-        <br>
-        <button type="submit" class="btn btn-primary btn-sm mr-2">Create</button>
-      </form>
+    <main class="col-9 mx-auto mt-1 p-5">
+      {{ content }}
+      <section class='text-center'>
+        <button type="button" onclick="history.back()" class="btn btn-primary btn-sm mr-2">Return</button>
+      </section>
     </main>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   </body>
+
 </html>

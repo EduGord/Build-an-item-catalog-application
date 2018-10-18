@@ -72,8 +72,8 @@
           {% if login_session['email'] and login_session['user_id']  == subject.user_id %}
           <button type="button" class="btn btn-primary btn-sm mr-2" onclick="location.href='{{url_for('editSubject', subject_id=subject.id)}}'">Edit</button>
           <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('deleteSubject', subject_id=subject.id)}}'">Delete</button>
-          <hr>
           {% endif %}
+          <hr>
         </article>
       {% endfor %}
       </section>

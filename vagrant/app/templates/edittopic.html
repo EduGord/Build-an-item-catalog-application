@@ -55,7 +55,7 @@
     </nav>
     <main class="col-6 mx-auto mt-1 p-5">
       <h1> {{ topic.name }}</h1>
-      <form action= "{{url_for('editTopic', subject_id = subject.id, topic_id=topic.id)}}" method = 'POST'>
+      <form method = 'POST'>
         <p>New Name:</p>
         <p>
           <input type = 'text' size='30' name = 'name' placeholder = '{{topic.name}}' value = '{{topic.name}}'>
@@ -66,7 +66,7 @@
         </p>
 
         <p>Article:</p>
-        <p>
+
           <select name = 'article'>
             <option value="" ></option>
             {% for article in files %}
@@ -74,18 +74,16 @@
             <option value="{{article}}" selected>{{article}}</option>
             {%else%}
             <option value="{{article}}" >{{article}}</option>
-            {%endif%}
+            {% endif %}
             {% endfor %}
           </select>
-        </p>
-
-        <p>
+          <br>
+          <br>
           <button type="submit" class="btn btn-primary btn-sm mr-2">Edit</button>
-        </p>
       </form>
-      <p>
-        <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('topics', subject_id = topic.subject_id)}}'">Cancel</button>
-      </p>
+
+      <br>
+      <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('topics', subject_id = topic.subject_id)}}'">Cancel</button>
     </main>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>

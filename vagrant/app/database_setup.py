@@ -29,7 +29,7 @@ class User(Base):
     name = Column(String(250), nullable = False)
     email = Column(String(250), nullable = False)
     picture = Column(String(250))
-    id = Column(Integer, primary_key = True)
+    id = Column(String(250), primary_key = True)
 
 # Class definition
 class Subject(Base):
@@ -40,7 +40,7 @@ class Subject(Base):
     #  Mappers
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'))
+    user_id = Column(String, ForeignKey('user.id'))
     user = relationship(User)
 
 # Class definition
@@ -55,7 +55,7 @@ class Topic(Base):
     description = Column(String(250))
     subject_id = Column(Integer, ForeignKey('subject.id'))
     subject = relationship(Subject)
-    user_id = Column(Integer, ForeignKey('user.id'))
+    user_id = Column(String, ForeignKey('user.id'))
     user = relationship(User)
     article = Column(String(80))
 
@@ -76,12 +76,13 @@ class Question(Base):
     id = Column(Integer, primary_key=True)
     type = Column(String(2))
     answer = Column(String(250))
+    alternatives = Column(String(1000))
     header = Column(String(250))
     body = Column(String(2500))
+    subject_id = Column(Integer, ForeignKey('subject.id'))
     topic_id = Column(Integer, ForeignKey('topic.id'))
-    topic = relationship(Topic)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User)
+    user_id = Column(String, ForeignKey('user.id'))
+
 
 # An instance of our create_engine class and point to the database we'll use
 # Since we're using SQLite 3 the create Engine will create a new file  that we

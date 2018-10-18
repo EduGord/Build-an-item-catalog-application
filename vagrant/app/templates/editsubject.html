@@ -54,7 +54,7 @@
     </nav>
     <main class="col-6 mx-auto mt-1 p-5">
       <h1> {{ subject.name }}</h1>
-      <form action= "{{url_for('editSubject', subject_id = subject.id)}}" method = 'POST'>
+      <form method = 'POST'>
         <p>New Name:</p>
         <input type = 'text' size='30' name = 'name' placeholder = '{{subject.name}}' value='{{subject.name}}'>
         <p/>

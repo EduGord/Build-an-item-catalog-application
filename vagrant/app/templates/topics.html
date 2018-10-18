@@ -40,6 +40,16 @@
               {% endfor %}
             </div>
           </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Topics
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for topic in topics %}
+                <a class="dropdown-item" href="{{url_for('viewTopic', topic_id=topic.id, subject_id=subject.id)}}">{{topic.name}}</a>
+              {% endfor %}
+            </div>
+          </li>
         </ul>
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
@@ -70,9 +80,12 @@
         <article>
           <p>Topic:<strong> {{topic.name}} </strong></p>
           <p> Description: {{topic.description}} </p>
+          {% if login_session['facebook_id'] == subject.user_id or login_session['gplus_id'] == subject.user_id %}
           <p> Article: {{topic.article}} </p>
+          {% endif %}
           <button type="button" class="btn btn-info btn-sm mr-2" onclick="location.href='{{url_for('viewTopic',subject_id=subject.id,topic_id=topic.id)}}'"> View </button>
-          {% if login_session['email'] and login_session['user_id']  == subject.user_id %}
+          <button type="button" class="btn btn-warning btn-sm mr-2" onclick="location.href='{{url_for('quiz',subject_id=subject.id,topic_id=topic.id)}}'"> Quiz </button>
+          {% if login_session['user_id']  == topic.user_id or login_session['user_id'] == subject.user_id %}
           <button type="button" class="btn btn-primary btn-sm mr-2" onclick="location.href='{{url_for('editTopic', subject_id = subject.id, topic_id = topic.id)}}'">Edit</button>
           <button type="button" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('deleteTopic', subject_id = subject.id, topic_id = topic.id)}}'">Delete</button>
           {% endif %}

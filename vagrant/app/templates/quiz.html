@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
     <link rel=stylesheet href="{{url_for('static', filename='styles.css')}}">
+
+    <script src="./js/quiz.js"></script>
   </head>
   <body class="container-fluid px-0 text-center">
     <!-- Navbar -->
@@ -30,11 +33,13 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Subjects
+              {{subject.name}}
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              {% for subject in subjects %}
-                <a class="dropdown-item" href="{{url_for('topics',subject_id=subject.id)}}">{{subject.name}}</a>
+              {% for sub in subjects %}
+                {% if sub.name != subject.name %}
+                <a class="dropdown-item" href="{{url_for('topics',subject_id=sub.id)}}">{{sub.name}}</a>
+                {% endif %}
               {% endfor %}
             </div>
           </li>
@@ -50,43 +55,58 @@
         </ul>
       </div>
     </nav>
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for message in messages %}
-          <li><strong>{{message}}</strong></li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-
-    <main class="col-6 mx-auto mt-1 pt-5 pb-5">
-      <h1> {{subject.name}} </h1>
-
-      <h2> New Topic </h2>
-
-      <form method = 'POST'>
-        <p>Name:</p>
-        <input type='text' size='30' name='name'>
-        <br>
-        <p>Description:</p>
-        <textarea type='text'  cols='31' name='description'></textarea>
-        <br>
-        <p>Article:</p>
-        <select name = 'article'>
-          <option value="" selected></option>
-          {% for article in files %}
-          <option value="{{article}}">{{article}}</option>
-          {% endfor %}
-        </select>
-        <br>
-        <br>
-        <button type="submit" class="btn btn-primary btn-sm mr-2">Create</button>
-      </form>
+    <main class="col-9 mx-auto mt-1 p-5">
+        <div class="row">
+          <div class="col">
+            <!-- Header -->
+            <div class="row">
+              <div class="col">
+                <!-- Header -->
+                <div class="quiz-header">
+                  Subject: {{subject.name}} | ID da questão: #{{question.id}} | Question: 1/15 | Time: 1:20
+                </div>
+              </div>
+            </div>
+            <hr>
+            <!-- Conteúdo da questão  -->
+            <div class="row">
+              <div class="col">
+                <div class="question">
+                  <blockquote class="blockquote">
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                    <footer class="blockquote-footer">Someone famous in <cite title="Source Title">Source Title</cite></footer>
+                  </blockquote>
+                </div>
+              </div>
+            </div>
+            <hr>
+            <!-- Alternatives -->
+            <div class="row">
+              <ul class="alternatives">
+                {% for i, alternative in enumerate(alternatives) %}
+                <li class="row alternative">
+                  <label class="col" for="{{question.id}}-{{i}}">
+                    <input name="{{question.id}}" value="{{i}}" type="radio">
+                    <div class="letter">{{i}} <span class="description">{{question}}</span></div>
+                    <span class="description">Mel</span>
+                  </label>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <hr>
+            <!-- Botão Confirma -->
+            <div class="row">
+              <div class="col confirma-wrapper">
+                <button type="button" class="btn btn-success" onclick="check()">Confirma</button>
+              </div>
+            </div>
+          </div>
+        </div>
     </main>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   </body>
+
 </html>

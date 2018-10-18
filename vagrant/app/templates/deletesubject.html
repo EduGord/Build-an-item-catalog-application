@@ -8,18 +8,68 @@
     <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
     <link rel=stylesheet href="{{url_for('static', filename='styles.css')}}">
   </head>
-  <body>
-    <h1> {{subject.name}} </h1>
+  <body class="container-fluid px-0">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary text-center">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      {%if login_session['username'] %}
+      <div class="user-info mr-5">
+        <figure>
+          <img src="{{login_session['picture']}}">
+          <figcaption>{{login_session['username']}}</figcaption>
+        </figure>
+      </div>
+      {%endif %}
 
-    <p> Are you sure you want to delete <strong>{{ subject.name }}</strong>? </p>
+      <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+          <li class="nav-item active">
+            <a class="nav-link" href="/education">E-Learning<span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{subject.name}}
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              {% for sub in subjects %}
+                {% if sub.name != subject.name %}
+                <a class="dropdown-item" href="{{url_for('topics',subject_id=sub.id)}}">{{sub.name}}</a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            {% if login_session['username'] %}
+            <a class="nav-link" href="{{url_for('disconnect')}}">Log Out</a>
+            {% else %}
+            <a class="nav-link" href="{{url_for('login')}}">Log In</a>
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <main class="col-6 mx-auto mt-1 p-5 text-center">
+      <h1> {{subject.name}} </h1>
 
-    <form action="{{ url_for('deleteSubject', subject_id=subject.id)}}" method = 'POST'>
-      <input type='submit', value = 'Delete'>
-    </form>
+      <p> Are you sure you want to delete <strong>{{ subject.name }}</strong>? </p>
+      <br>
+      {% if login_session['email'] and login_session['user_id']  == subject.user_id %}
+      <button type="button" class="btn btn-warning btn-md mr-2" onclick="location.href='{{ url_for('subjects')}}'">Cancel</button>
+      {% for i in range (0,5)%}
+      <br>
+      {%endfor%}
+      <form action="{{ url_for('deleteSubject', subject_id=subject.id)}}" method = 'POST'>
+        <button type="submit" class="btn btn-danger btn-sm mr-2" onclick="location.href='{{url_for('deleteSubject', subject_id=subject.id)}}'">Delete</button>
+      </form>
+      {% endif %}
 
-    <a href = "{{ url_for('subjectsList', subject_id = subject.id)}}"> Cancel </a>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+      <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
   </body>
+
 </html>
