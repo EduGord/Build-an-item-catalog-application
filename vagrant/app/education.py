@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 # Auth imports
 from flask import session as login_session
-import random, string
+import random
+import string
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
@@ -21,7 +22,8 @@ from flask import Markup
 # Find files
 import os
 
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+CLIENT_ID = json.loads(open('client_secrets.json', 'r')
+                       .read())['web']['client_id']
 
 # Create session and connect to DB ##
 engine = create_engine('sqlite:///educationmenu.db')
@@ -31,16 +33,16 @@ session = scoped_session(sessionmaker(bind=engine))
 
 app = Flask(__name__)
 
+
 @app.route('/users')
-@app.route('/users/')
 def users():
     users = session.query(User)
     # return "The current session state is %s" % login_session['state']
     return(render_template('users.html', users=users))
 
+
 # Create anti-forgery state token
 @app.route('/login')
-@app.route('/login/')
 def login():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
@@ -58,29 +60,32 @@ def fbconnect():
     access_token = request.data
     print("access token received {token} ".format(token=access_token))
 
-
-    app_id = json.loads(open('fb_client_secrets.json', 'r').read())\
-    ['web']['app_id']
+    app_id = json.loads(open('fb_client_secrets.json', 'r')
+                        .read())['web']['app_id']
     app_secret = json.loads(
         open('fb_client_secrets.json', 'r').read())['web']['app_secret']
-    url = "https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id={client_id}&client_secret={client_secret}&fb_exchange_token={fb_exchange_token}"\
-    .format(client_id = app_id, client_secret = app_secret, fb_exchange_token = access_token)
+    url = "https://graph.facebook.com/oauth/access_token?grant_type=" \
+          "fb_exchange_token&client_id={client_id}&client_secret=" \
+          "{client_secret}&fb_exchange_token={fb_exchange_token}" \
+          .format(client_id=app_id, client_secret=app_secret,
+                  fb_exchange_token=access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
-
 
     # Use token to get user info from API
     userinfo_url = "https://graph.facebook.com/v3.1/me"
     '''
-        Due to the formatting for the result from the server token exchange we have to
-        split the token first on commas and select the first index which gives us the key : value
-        for the server access token then we split it on colons to pull out the actual token value
-        and replace the remaining quotes with nothing so that it can be used directly in the graph
-        api calls
+        Due to the formatting for the result from the server token exchange
+        we have to split the token first on commas and select the first index
+        which gives us the key : value for the server access token then we
+        split it on colons to pull out the actual token value and replace the
+        remaining quotes with nothing so that it can be used directly in
+        the graph api calls
     '''
     token = result.split(',')[0].split(':')[1].replace('"', '')
 
-    url = "https://graph.facebook.com/v3.1/me?access_token={token}&fields=name,id,email".format(token=token)
+    url = "https://graph.facebook.com/v3.1/me?access_token={token}" \
+          "&fields=name,id,email".format(token=token)
 
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
@@ -98,7 +103,8 @@ def fbconnect():
     login_session['access_token'] = token
 
     # Get user picture
-    url = 'https://graph.facebook.com/v2.8/me/picture?access_token={token}&redirect=0&height=200&width=200'.format(token=token)
+    url = "https://graph.facebook.com/v2.8/me/picture?access_token={token}" \
+          "&redirect=0&height=200&width=200".format(token=token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     data = json.loads(result)
@@ -115,13 +121,14 @@ def fbconnect():
             return None
 
     def createUser(login_session):
-        newUser = User(name=login_session['username'], \
-                       email=login_session['email'], \
-                       picture=login_session['picture'], \
+        newUser = User(name=login_session['username'],
+                       email=login_session['email'],
+                       picture=login_session['picture'],
                        id=login_session['facebook_id'])
         session.add(newUser)
         session.commit()
-        user = session.query(User).filter_by(email=login_session['email']).one()
+        user = session.query(User).filter_by(email=login_session['email'])\
+            .one()
         return user.id
 
     # see if user exists
@@ -137,9 +144,11 @@ def fbconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;" \
+    "-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
 
-    flash("Now logged in as {username}".format(username=login_session['username']))
+    flash("Now logged in as {username}".format(
+                                        username=login_session['username']))
 
     return(output)
 
@@ -149,7 +158,8 @@ def fbdisconnect():
     facebook_id = login_session['facebook_id']
     # The access token must me included to successfully logout
     access_token = login_session['access_token']
-    url = 'https://graph.facebook.com/{fb_id}/permissions?access_token={access_token}'.format(fb_id=facebook_id,access_token=access_token)
+    url = "https://graph.facebook.com/{fb_id}/permissions?access_token=" \
+          "{access_token}".format(fb_id=facebook_id, access_token=access_token)
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     return("you have been logged out")
@@ -178,7 +188,8 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={token}'.format(token=access_token))
+    url = ("https://www.googleapis.com/oauth2/v1/tokeninfo?"
+           "access_token={token}".format(token=access_token))
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # If there was an error in the access token info, abort.
@@ -206,8 +217,8 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(json.dumps("Current user is already"
+                                            "connected."), 200)
         response.headers['Content-Type'] = 'application/json'
         return(response)
 
@@ -228,20 +239,19 @@ def gconnect():
     login_session['email'] = data['email']
 
     def createUser(login_session):
-        newUser = User(name=login_session['username'], \
-                       email=login_session['email'], \
-                       picture=login_session['picture'], \
+        newUser = User(name=login_session['username'],
+                       email=login_session['email'],
+                       picture=login_session['picture'],
                        id=login_session['gplus_id'])
         session.add(newUser)
         session.commit()
-        user = session.query(User).filter_by(id=login_session['gplus_id']).one()
+        user = session.query(User).filter_by(id=login_session
+                                             ['gplus_id']).one()
         return(user.id)
-
 
     def getUserInfo(user_id):
         user = session.query(User).filter_by(id=user_id).one()
         return(user)
-
 
     def getUserID(email):
         try:
@@ -263,13 +273,15 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as {username}".format(username=login_session['username']))
+    output += '" style = "width: 300px; height: 300px;border-radius: 150px;"' \
+              '"-webkit-border-radius: 150px;-moz-border-radius: 150px;">'
+    flash("you are now logged in as {username}"
+          .format(username=login_session['username']))
     print("done!")
     return(output)
 
+
 @app.route('/gdisconnect')
-@app.route('/gdisconnect/')
 def gdisconnect():
     # Only disconnect a connected user.
     access_token = login_session.get('access_token')
@@ -278,7 +290,8 @@ def gdisconnect():
             json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%{token}'.format(token=access_token)
+    url = 'https://accounts.google.com/o/oauth2/'\
+          'revoke?token=%{token}'.format(token=access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     if result['status'] == '200':
@@ -286,9 +299,11 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response = make_response(json.dumps('Failed to revoke token'
+                                            'for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
+
 
 # Disconnect based on provider
 @app.route('/disconnect')
@@ -315,68 +330,119 @@ def disconnect():
 
 @app.route('/')
 @app.route('/education')
-@app.route('/education/')
 def subjects():
     subjects = session.query(Subject)
-    return(render_template('subjects.html', subjects=subjects, login_session=login_session))
+    return(render_template('subjects.html', subjects=subjects,
+                           login_session=login_session))
+
 
 @app.route('/education/subject/new', methods=['GET', 'POST'])
 @app.route('/education/subject/new/', methods=['GET', 'POST'])
 def newSubject():
+    if login_session.get('user_id'):
+        if request.method == 'POST':
+            newSubject = Subject(name=request.form['name'],
+                                 user_id=login_session['user_id'])
 
-    if request.method == 'POST':
-        if login_session['provider'] == 'facebook':
-            newSubject = Subject(name=request.form['name'], user_id=login_session['facebook_id'])
-        if login_session['provider'] == 'google':
-            newSubject = Subject(name=request.form['name'], user_id=login_session['gplus_id'])
-        session.add(newSubject)
-        session.commit()
-        flash("New subject created!")
-        return(redirect(url_for('subjects')))
+            session.add(newSubject)
+            session.commit()
+            flash("New subject created!")
+            return(redirect(url_for('subjects')))
+        else:
+            subjects = session.query(Subject)
+            return(render_template('newsubject.html',
+                                   login_session=login_session,
+                                   subjects=subjects))
     else:
-        return(render_template('newsubject.html',login_session=login_session))
+        subjects = session.query(Subject)
+        subject = Subject(name='Subjects')
+        topics = False
+        topic = Topic()
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'
+                  .format(dir=dir, article=article), 'r') as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/edit', methods=['GET', 'POST'])
-@app.route('/education/subject/<int:subject_id>/edit/', methods=['GET', 'POST'])
 def editSubject(subject_id):
-    editSubject = session.query(Subject).filter_by(id=subject_id).one()
-    if request.method == 'POST':
-        editSubject.name = request.form['name']
-        session.add(editSubject)
-        session.commit()
-        flash("Subject edited")
-        return(redirect(url_for('subjects')))
+    owner_id = session.query(Subject).filter_by(id=subject_id).one().user_id
+    if login_session.get('user_id') == owner_id:
+        editSubject = session.query(Subject).filter_by(id=subject_id).one()
+        if request.method == 'POST':
+            editSubject.name = request.form['name']
+            session.add(editSubject)
+            session.commit()
+            flash("Subject edited")
+            return(redirect(url_for('subjects')))
+        else:
+            return(render_template('editsubject.html', subject=editSubject,
+                                   login_session=login_session))
     else:
-        return(render_template('editsubject.html',subject=editSubject,login_session=login_session))
+        subjects = session.query(Subject)
+        subject = session.query(Subject).filter_by(id=subject_id).one()
+        topics = session.query(Topic).filter_by(subject_id=subject_id)
+        topic = Topic(name='Topics')
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'
+                  .format(dir=dir, article=article), 'r')as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/delete',
            methods=['GET', 'POST'])
-@app.route('/education/subject/<int:subject_id>/delete/',
-           methods=['GET', 'POST'])
 def deleteSubject(subject_id):
-    if request.method == 'POST':
-        deleteSubject = session.query(Subject).filter_by(id=subject_id).one()
-        deleteTopics = session.query(Topic).filter_by(subject_id=subject_id)
-        session.delete(deleteSubject)
-        for topic in deleteTopics:
-            session.delete(topic)
-        session.commit()
-        flash("Subject deleted!")
-        return(redirect(url_for('subjects')))
+    owner_id = session.query(Subject).filter_by(id=subject_id).one().user_id
+    if login_session.get('user_id') == owner_id:
+        if (request.method == 'POST' and
+           login_session.get('user_id') == owner_id):
+            deleteSubject = session.query(Subject)\
+                            .filter_by(id=subject_id).one()
+            deleteTopics = session.query(Topic)\
+                .filter_by(subject_id=subject_id)
+            session.delete(deleteSubject)
+            for topic in deleteTopics:
+                session.delete(topic)
+            session.commit()
+            flash("Subject deleted!")
+            return(redirect(url_for('subjects')))
+        else:
+            subject = session.query(Subject).filter_by(id=subject_id).one()
+            return(render_template('deletesubject.html', subject=subject,
+                                   login_session=login_session))
     else:
+        subjects = session.query(Subject)
         subject = session.query(Subject).filter_by(id=subject_id).one()
-        return(render_template('deletesubject.html', subject=subject, login_session=login_session))
+        topics = session.query(Topic).filter_by(subject_id=subject_id)
+        topic = Topic(name='Topics')
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'
+                  .format(dir=dir, article=article), 'r')as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>', methods=['GET'])
-@app.route('/education/subject/<int:subject_id>/', methods=['GET'])
 def topics(subject_id):
     topics = session.query(Topic).filter_by(subject_id=subject_id)
     subject = session.query(Subject).filter_by(id=subject_id).one()
     subjects = session.query(Subject)
-    return(render_template('topics.html', topics=topics, subject=subject, login_session=login_session, subjects=subjects))
+    return(render_template('topics.html', topics=topics, subject=subject,
+                           login_session=login_session, subjects=subjects))
 
 
 @app.route('/education/subject/<int:subject_id>/JSON')
@@ -386,8 +452,8 @@ def subjectJSON(subject_id):
     return(jsonify(topics=[topics.serialize for topic in topics]))
 
 
-@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/view', methods=['GET'])
-@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/view/', methods=['GET'])
+@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/view',
+           methods=['GET'])
 def viewTopic(subject_id, topic_id):
     topics = session.query(Topic).filter_by(subject_id=subject_id)
     topic = topics.filter_by(id=topic_id).one()
@@ -399,95 +465,149 @@ def viewTopic(subject_id, topic_id):
     else:
         dir = 'common_files'
         article = 'Not Available.md'
-    with open('./static/{dir}/{article}'.format(dir=dir, article=article), 'r') as file:
+    with open('./static/{dir}/{article}'.format(dir=dir,
+                                                article=article), 'r') as file:
         content = file.read()
         content = Markup(markdown.markdown(content))
-    return(render_template('topic.html', subjects=subjects, topics=topics,\
-                           subject=subject, topic=topic, \
+    return(render_template('topic.html', subjects=subjects, topics=topics,
+                           subject=subject, topic=topic,
                            login_session=login_session, content=content))
 
-@app.route('/education/subject/<int:subject_id>/<int:topic_id>/quiz', methods=['POST','GET'])
-@app.route('/education/subject/<int:subject_id>/<int:topic_id>/quiz/', methods=['POST','GET'])
+
+@app.route('/education/subject/<int:subject_id>/<int:topic_id>/quiz',
+           methods=['POST', 'GET'])
 def quiz(subject_id, topic_id):
     subject = session.query(Subject).filter_by(id=subject_id).one()
     topic = session.query(Topic).filter_by(id=topic_id).one()
-    questions = session.query(Question).filter_by(subject_id=subject_id,topic_id=topic_id)
+    questions = session.query(Question).filter_by(subject_id=subject_id,
+                                                  topic_id=topic_id)
     if not questions.first():
         with open('./static/common_files/Not Available.md', 'r') as file:
             content = file.read()
             content = Markup(markdown.markdown(content))
             subjects = session.query(Subject)
             topics = session.query(Topic).filter_by(subject_id=subject_id)
-        return(render_template('notavailable.html', subjects=subjects, \
-                               topics=topics,\
-                               subject=subject, topic=topic, \
+        return(render_template('notavailable.html', subjects=subjects,
+                               topics=topics,
+                               subject=subject, topic=topic,
                                login_session=login_session, content=content))
     else:
-        return(render_template('quiz.html', subject = subject, topic = topic, login_session=login_session))
+        return(render_template('quiz.html', subject=subject, topic=topic,
+                               login_session=login_session))
 
-@app.route('/education/subject/<int:subject_id>/topic/new', methods=['POST', 'GET'])
-@app.route('/education/subject/<int:subject_id>/topic/new/', methods=['POST', 'GET'])
+
+@app.route('/education/subject/<int:subject_id>/topic/new',
+           methods=['POST', 'GET'])
 def newTopic(subject_id):
-    files = os.listdir('./static/articles')
+    if login_session.get('user_id'):
+        files = os.listdir('./static/articles')
 
-    subject = session.query(Subject).filter_by(id=subject_id).one()
-    if request.method == 'POST':
-        if login_session['provider'] == 'facebook':
-            id = login_session['facebook_id']
-        if login_session['provider'] == 'google':
-            id = login_session['gplus_id']
-        newTopic = Topic(name=request.form['name'], \
-                         description=request.form['description'], \
-                         subject_id=subject_id, user_id=id, \
-                         article=request.form['article'])
-        session.add(newTopic)
-        session.commit()
-        flash("New topic created!")
-        return(redirect(url_for('topics', subject_id=subject_id)))
+        subject = session.query(Subject).filter_by(id=subject_id).one()
+        if request.method == 'POST':
+            newTopic = Topic(name=request.form['name'],
+                             description=request.form['description'],
+                             subject_id=subject_id,
+                             user_id=login_session['user_id'],
+                             article=request.form['article'])
+            session.add(newTopic)
+            session.commit()
+            flash("New topic created!")
+            return(redirect(url_for('topics', subject_id=subject_id)))
+        else:
+            return(render_template('newtopic.html', subject=subject,
+                                   files=files, login_session=login_session))
     else:
-        return(render_template('newtopic.html', subject=subject, files=files, login_session=login_session))
+        subjects = session.query(Subject)
+        subject = session.query(Subject).filter_by(id=subject_id).one()
+        topics = session.query(Topic).filter_by(subject_id=subject_id)
+        topic = Topic(name='Topics')
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'
+                  .format(dir=dir, article=article), 'r')as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/edit',
            methods=['POST', 'GET'])
-@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/edit/',
-          methods=['POST', 'GET'])
 def editTopic(subject_id, topic_id):
-    files = os.listdir('./static/articles')
-    editTopic = session.query(Topic).filter_by(subject_id=subject_id,
-                                              id=topic_id).one()
-    if request.method == 'POST':
-        if request.form['name']:
-            editTopic.name = request.form['name']
-            editTopic.description = request.form['description']
-            editTopic.article = request.form['article']
-            session.add(editTopic)
-            session.commit()
-            flash("Subject topic edited!")
-        return(redirect(url_for('topics', subject_id=subject_id)))
+    subject_owner_id = (session.query(Subject)
+                        .filter_by(id=subject_id).one().user_id)
+    topic_owner_id = session.query(Topic).filter_by(id=topic_id).one().user_id
+    if (login_session.get('user_id') == topic_owner_id or
+       login_session.get('user_id') == subject_owner_id):
+            files = os.listdir('./static/articles')
+            editTopic = session.query(Topic).filter_by(subject_id=subject_id,
+                                                       id=topic_id).one()
+            if request.method == 'POST':
+                if request.form['name']:
+                    editTopic.name = request.form['name']
+                    editTopic.description = request.form['description']
+                    editTopic.article = request.form['article']
+                    session.add(editTopic)
+                    session.commit()
+                    flash("Subject topic edited!")
+                return(redirect(url_for('topics', subject_id=subject_id)))
+            else:
+                subject = session.query(Subject).filter_by(id=subject_id).one()
+                return(render_template('edittopic.html', subject=subject,
+                                       topic=editTopic,
+                                       login_session=login_session,
+                                       files=files))
     else:
+        subjects = session.query(Subject)
         subject = session.query(Subject).filter_by(id=subject_id).one()
-        return(render_template('edittopic.html', subject=subject,
-                               topic=editTopic, login_session=login_session, \
-                               files=files))
+        topics = session.query(Topic).filter_by(subject_id=subject_id)
+        topic = Topic(name='Topics')
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'
+                  .format(dir=dir, article=article), 'r') as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 @app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/delete',
            methods=['POST', 'GET'])
-@app.route('/education/subject/<int:subject_id>/topic/<int:topic_id>/delete/',
-          methods=['POST', 'GET'])
 def deleteTopic(subject_id, topic_id):
-    deleteTopic = session.query(Topic).filter_by(subject_id=subject_id,
-                                                 id=topic_id).one()
-    if request.method == 'POST':
-        session.delete(deleteTopic)
-        session.commit()
-        flash("Topic deleted!")
-        return(redirect(url_for('topics', subject_id=subject_id)))
+    subject_owner_id = (session.query(Subject)
+                        .filter_by(id=subject_id).one().user_id)
+    topic_owner_id = session.query(Topic).filter_by(id=topic_id).one().user_id
+    if (login_session.get('user_id') == subject_owner_id or
+       login_session.get('user_id') == topic_owner_id):
+        deleteTopic = session.query(Topic).filter_by(subject_id=subject_id,
+                                                     id=topic_id).one()
+        if request.method == 'POST':
+            session.delete(deleteTopic)
+            session.commit()
+            flash("Topic deleted!")
+            return(redirect(url_for('topics', subject_id=subject_id)))
+        else:
+            subject = session.query(Subject).filter_by(id=subject_id).one()
+            return(render_template('deletetopic.html', subject=subject,
+                                   topic=deleteTopic,
+                                   login_session=login_session))
     else:
+        subjects = session.query(Subject)
         subject = session.query(Subject).filter_by(id=subject_id).one()
-        return(render_template('deletetopic.html', subject=subject,
-                               topic=deleteTopic,login_session=login_session))
+        topics = session.query(Topic).filter_by(subject_id=subject_id)
+        topic = Topic(name='Topics')
+        dir = 'common_files'
+        article = 'Not Authorized.md'
+        with open('./static/{dir}/{article}'.format(dir=dir, article=article),
+                  'r') as file:
+            content = file.read()
+            content = Markup(markdown.markdown(content))
+        return(render_template('notauthorized.html', subjects=subjects,
+                               topics=topics, subject=subject, topic=topic,
+                               content=content, login_session=login_session))
 
 
 if __name__ == '__main__':
